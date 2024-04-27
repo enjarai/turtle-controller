@@ -19,8 +19,12 @@ export async function saveBlocks() {
     console.log("Saved Blocks");
 }
 
-export function getBlock(pos: Vec3) {
-    return blocks.find(block => posEquals(block.position, pos))
+export function getBlock(pos: Vec3): WorldBlock {
+    return blocks.find(block => posEquals(block.position, pos)) || {
+        id: "minecraft:air",
+        state: {},
+        position: pos,
+    }
 }
 
 export function setBlock(pos: Vec3, block: BlockInfo | null): Vec3 {

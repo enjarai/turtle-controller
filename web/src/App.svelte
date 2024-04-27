@@ -1,13 +1,14 @@
 <script lang="ts">
-  import { back, forward, keyPress, turnLeft, turnRight, turtles } from "turtles";
-  import TurtleEntry from "components/TurtleEntry.svelte";
+  import { back, forward, keyPress, turnLeft, turnRight, turtles } from "./turtles";
+  import TurtleEntry from "./components/TurtleEntry.svelte";
   import { Canvas } from "@threlte/core";
-  import Scene from "components/scene/Scene.svelte";
-  import { selectedTurtles } from "selection";
-  import { openOverlay, tooltip } from "misc";
-  import LocationOverlay from "components/LocationOverlay.svelte";
-  import Terminal from "components/Terminal.svelte";
-  import TurtleInventory from "components/TurtleInventory.svelte";
+  import Scene from "./components/scene/Scene.svelte";
+  import { selectedTurtles } from "./selection";
+  import { openOverlay, tooltip } from "./misc";
+  import LocationOverlay from "./components/LocationOverlay.svelte";
+  import Terminal from "./components/Terminal.svelte";
+  import TurtleInventory from "./components/TurtleInventory.svelte";
+  import type {Turtle} from '@shared/types';
 
   let mouse = {x: 0, y: 0};
 
@@ -15,6 +16,8 @@
     mouse.x = e.clientX;
     mouse.y = e.clientY;
   }
+
+  $: selected = $selectedTurtles.map(t => turtles.getTurtle(t)).filter(t => t !== null).map(t => t as Turtle);
 </script>
 
 <!--<svelte:document on:contextmenu|preventDefault|stopPropagation={({ x, y }) => menu.popup(x, y)} />-->
@@ -37,9 +40,9 @@
     </Canvas>
   </div>
   <div class="overlay">
-    {#each $selectedTurtles as turtle (turtle.label)}
+    {#each selected as turtle (turtle.label)}
       <div class="turtle-inventory">
-        <TurtleInventory bind:turtle={turtle}/>
+        <TurtleInventory turtle={turtle}/>
       </div>
     {/each}
   </div>

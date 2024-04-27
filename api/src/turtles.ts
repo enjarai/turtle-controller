@@ -19,7 +19,7 @@ async function loadTurtles(): Promise<Turtle[]> {
 export async function saveTurtles() {
     await fs.writeFile(turtlesDataPath, JSON.stringify(turtles, (key, value) => {
         switch (key) {
-            case "connection":
+            case "connected":
             case "lock":
                 return undefined;
             default:
@@ -45,7 +45,12 @@ export function getTurtle(label: string | null): Turtle | undefined {
 }
 
 export function addTurtle(turtle: Turtle) {
-    turtles.push(turtle);
+    const index = turtles.findIndex(t => t.label === turtle.label);
+    if (index === -1) {
+        turtles.push(turtle);
+    } else {
+        turtles[index] = turtle;
+    }
 }
 
 export let turtles = await loadTurtles();
@@ -103,6 +108,8 @@ export const down = createMoveCommand("return turtle.down()", t => t.position = 
 export const turnLeft = createMoveCommand("return turtle.turnLeft()", t => t.facing = rotateLeft(t.facing));
 export const turnRight = createMoveCommand("return turtle.turnRight()", t => t.facing = rotateRight(t.facing));
 
+export const moveActions: Record<string, (turtle: Turtle) => Promise<boolean>> = {forward, back, up, down, turnLeft, turnRight};
+
 export async function scanAll(turtle: Turtle) {
     let scanResult = await sendCommand<(BlockInfo | false)[]>(turtle, `
     function look(fun)
@@ -131,8 +138,8 @@ export async function scanAll(turtle: Turtle) {
     );
 }
 
-export async function requestInventory(turtle: Turtle): Promise<[Tuple<ItemStack, 16>, number]> {
-    return await sendCommand<[Tuple<ItemStack, 16>, number]>(turtle, `
+export async function requestInventory(turtle: Turtle): Promise<[Tuple<ItemStack, 16>, number, number]> {
+    return await sendCommand<[Tuple<ItemStack, 16>, number, number]>(turtle, `
     r = {}
     for i=1,16 do
         d = turtle.getItemDetail(i)
@@ -145,19 +152,22 @@ export async function requestInventory(turtle: Turtle): Promise<[Tuple<ItemStack
             }
         end
     end
-    return {r, turtle.getSelectedSlot()}
+    return {r, turtle.getSelectedSlot(), turtle.getFuelLevel()}
     `);
 }
 
-export async function refreshInventory(turtle: Turtle) {
+export async function refreshInventory(turtle: Turtle): Promise<boolean> {
     try {
-        const [result, selectedSlot] = await requestInventory(turtle);
+        const [result, selectedSlot, fuelLevel] = await requestInventory(turtle);
 
         turtle.inventory = result
         turtle.selectedSlot = selectedSlot - 1;
+        turtle.fuelLevel = fuelLevel;
         await syncTurtles(turtle);
+        return true;
     } catch (e) {
         console.warn("Failed to refresh inventory: " + e);
+        return false;
     }
 }
 
@@ -206,6 +216,7 @@ function createUpForwardDownFunction(commandBuilder: (keyWord: "Up" | "" | "Down
 
             if (result) {
                 await refreshInventory(turtle);
+                await scanAll(turtle);
             }
 
             return result;
@@ -220,3 +231,21 @@ export const suck = createUpForwardDownFunction(keyWord => `return turtle.suck${
 export const drop = createUpForwardDownFunction(keyWord => `return turtle.drop${keyWord}()`);
 export const dig = createUpForwardDownFunction(keyWord => `return turtle.dig${keyWord}()`);
 export const place = createUpForwardDownFunction(keyWord => `return turtle.place${keyWord}()`);
+
+export const interactionActions: Record<string, (turtle: Turtle, direction: InteractionDirection) => Promise<boolean>> = {suck, drop, dig, place};
+
+export async function refuel(turtle: Turtle): Promise<boolean> {
+    try {
+        const result = await sendCommand<boolean>(turtle, `return turtle.refuel()`);
+
+        if (result) {
+            await refreshInventory(turtle);
+            await syncTurtles(turtle);
+        }
+
+        return result;
+    } catch (e) {
+        console.warn("Failed to select slot: " + e);
+        return false;
+    }
+}

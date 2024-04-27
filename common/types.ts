@@ -7,6 +7,8 @@ export type Turtle = {
     lock?: boolean,
     inventory: Tuple<ItemStack, 16>,
     selectedSlot: number,
+    connected?: boolean,
+    fuelLevel: number,
 };
 
 export type WorldBlock = BlockInfo & {
@@ -31,8 +33,8 @@ export type ItemStack = null | {
 }
 
 export type InventoryContext = {
-    selected: Writable<number>,
     moving: Writable<boolean>,
+    trySelect: (id: number) => void,
     tryMove: (id: number, maxCount: number) => void,
     getStack: (slot: number) => ItemStack,
 }

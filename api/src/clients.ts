@@ -1,8 +1,17 @@
 import {type WebSocket, WebSocketServer} from "ws";
 import {clientPort, password} from "./misc";
-import {getTurtle, sendCommand, turtles} from "./turtles";
+import {
+    getTurtle, interactionActions,
+    moveActions,
+    refreshInventory, refuel,
+    scanAll,
+    selectSlot,
+    sendCommand,
+    transferTo,
+    turtles
+} from "./turtles";
 import {blocks, getBlock} from "./blocks";
-import type {Vec3} from "@shared/types";
+import type {InteractionDirection, Vec3} from "@shared/types";
 
 export const connectedClients: WebSocket[] = [];
 
@@ -53,6 +62,70 @@ wss.on('connection', (ws: WebSocket) => {
                     return null;
                 }
             });
+        } else if (type === "m") {
+            await respondSynced(ws, value, async (payload: {turtle: string, command: string}) => {
+                const turtle = getTurtle(payload.turtle);
+                if (turtle) {
+                    return await moveActions[payload.command](turtle);
+                } else {
+                    return null;
+                }
+            });
+        } else if (type === "s") {
+            await respondSynced(ws, value, async (label: string) => {
+                const turtle = getTurtle(label);
+                if (turtle) {
+                    await scanAll(turtle);
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+        } else if (type === "i") {
+            await respondSynced(ws, value, async (label: string) => {
+                const turtle = getTurtle(label);
+                if (turtle) {
+                    return await refreshInventory(turtle);
+                } else {
+                    return false;
+                }
+            });
+        } else if (type === "o") {
+            await respondSynced(ws, value, async (payload: {turtle: string, slot: number}) => {
+                const turtle = getTurtle(payload.turtle);
+                if (turtle) {
+                    return await selectSlot(turtle, payload.slot);
+                } else {
+                    return false;
+                }
+            });
+        } else if (type === "f") {
+            await respondSynced(ws, value, async (payload: {turtle: string, destinationSlot: number, maxCount: number | null}) => {
+                const turtle = getTurtle(payload.turtle);
+                if (turtle) {
+                    return await transferTo(turtle, payload.destinationSlot, payload.maxCount || undefined);
+                } else {
+                    return false;
+                }
+            });
+        } else if (type === "n") {
+            await respondSynced(ws, value, async (payload: {turtle: string, command: string, direction: InteractionDirection}) => {
+                const turtle = getTurtle(payload.turtle);
+                if (turtle) {
+                    return await interactionActions[payload.command](turtle, payload.direction);
+                } else {
+                    return false;
+                }
+            });
+        } else if (type === "u") {
+            await respondSynced(ws, value, async (label: string) => {
+                const turtle = getTurtle(label);
+                if (turtle) {
+                    return await refuel(turtle);
+                } else {
+                    return false;
+                }
+            });
         }
     });
 });
@@ -63,11 +136,20 @@ export function sendToAll(payload: string) {
 
 async function respondSynced<T>(ws: WebSocket, value: string, action: (payload: T) => Promise<any>) {
     const query = JSON.parse(value);
-    const payload = await action(query.payload);
-    ws.send("r:" + JSON.stringify({
-        syncId: query.syncId,
-        payload,
-    }));
+    try {
+        const payload = await action(query.payload);
+        console.log(`Responding to syncId ${query.syncId} with ${JSON.stringify(payload)}`)
+        ws.send("r:" + JSON.stringify({
+            syncId: query.syncId,
+            payload,
+        }));
+    } catch (e) {
+        console.log(`Responding to syncId ${query.syncId} with failure`)
+        ws.send("r:" + JSON.stringify({
+            syncId: query.syncId,
+            error: e,
+        }));
+    }
 }
 
 console.log("Listening for client connections...");

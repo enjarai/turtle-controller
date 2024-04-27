@@ -1,213 +1,134 @@
-import type { BlockInfo, InteractionDirection, ItemStack, Tuple, Turtle, WorldBlock } from "@shared/types";
+import type { InteractionDirection, Turtle } from "@shared/types";
 import { writable } from "svelte/store";
-import { offsetPosition, opposite, rotateLeft, rotateRight } from "@shared/direction";
 import { focusedTurtle, selectedTurtles } from "./selection";
-import { blocks } from "./blocks";
-import {expectResponse, wsc} from "./socket";
+import {expectResponse} from "./socket";
 
 export let turtles = {
     ...writable<Turtle[]>([]),
 
-    updateTurtle(label: string, updater: (turtle: Turtle) => void) {
+    updateTurtle(label: string, updater: (turtle: Turtle | null) => Turtle) {
         this.update(turtles => {
             const i = turtles.findIndex(t => t.label === label);
             if (i !== -1) {
-                updater(turtles[i]);
+                turtles.splice(i, 1, updater(turtles[i]));
+            } else {
+                turtles.push(updater(null));
             }
             return turtles;
         });
     },
 
-    updateOrCreateTurtle(label: string, updater: (turtle: Turtle | null) => Turtle) {
-        this.update(turtles => {
-            const i = turtles.findIndex(t => t.label === label);
-            if (i === -1) {
-                turtles = [...turtles, updater(null)];
-            } else {
-                turtles[i] = updater(turtles[i]);
-            }
-            return turtles;
-        });
+    getTurtle(label: string): Turtle | null {
+        let turtle = null
+        this.subscribe(t => {
+            turtle = t.find(ti => ti.label === label);
+        })();
+        return turtle;
     }
 };
 
 turtles.subscribe(t => {
     selectedTurtles.update(t2 => t2);
     focusedTurtle.update(t2 => t2);
+
+    console.log(t);
 });
 
 export async function sendCommand<T>(turtle: Turtle, command: string): Promise<T | null> {
-    return await expectResponse("e", JSON.stringify({
+    return await expectResponse("e", {
         turtle: turtle.label,
         command,
-    }));
+    });
 }
 
-function createMoveCommand(command: string, updater: (turtle: Turtle) => void): (turtle: Turtle) => Promise<boolean> {
+function createMoveCommand(command: string): (turtle: Turtle) => Promise<boolean> {
     return async turtle => {
-        const success = await sendCommand<boolean>(turtle, command);
-        if (success) {
-            turtles.updateTurtle(turtle.label, updater);
-            scanAll(turtle).then();
-        }
-        return success;
+        return await expectResponse("m", {
+            turtle: turtle.label,
+            command,
+        }) || false;
     };
 }
 
-export const forward = createMoveCommand("return turtle.forward()", t => t.position = offsetPosition(t.position, t.facing));
-export const back = createMoveCommand("return turtle.back()", t => t.position = offsetPosition(t.position, opposite(t.facing)));
-export const up = createMoveCommand("return turtle.up()", t => t.position = offsetPosition(t.position, "up"));
-export const down = createMoveCommand("return turtle.down()", t => t.position = offsetPosition(t.position, "down"));
-export const turnLeft = createMoveCommand("return turtle.turnLeft()", t => t.facing = rotateLeft(t.facing));
-export const turnRight = createMoveCommand("return turtle.turnRight()", t => t.facing = rotateRight(t.facing));
+export const forward = createMoveCommand("forward");
+export const back = createMoveCommand("back");
+export const up = createMoveCommand("up");
+export const down = createMoveCommand("down");
+export const turnLeft = createMoveCommand("turnLeft");
+export const turnRight = createMoveCommand("turnRight");
 
 export async function keyPress(e: KeyboardEvent) {
     selectedTurtles.subscribe(t => {
-        for (const turtle of t) {
-            if (!turtle.connection) {
-                console.log("Skipping turtle control, not connected.")
-                continue;
-            } else if (turtle.lock) {
-                console.log("Skipping turtle control, already in use.")
-                continue;
-            }
-
-            switch (e.key) {
-                case "w":
-                    forward(turtle);
-                    break;
-                case "s":
-                    back(turtle);
-                    break;
-                case "a":
-                    turnLeft(turtle);
-                    break;
-                case "d":
-                    turnRight(turtle);
-                    break;
-                case "r":
-                    up(turtle);
-                    break;
-                case "f":
-                    down(turtle);
-                    break;
+        for (const label of t) {
+            const turtle = turtles.getTurtle(label);
+            if (turtle) {
+                try {
+                    switch (e.key) {
+                        case "w":
+                            forward(turtle);
+                            break;
+                        case "s":
+                            back(turtle);
+                            break;
+                        case "a":
+                            turnLeft(turtle);
+                            break;
+                        case "d":
+                            turnRight(turtle);
+                            break;
+                        case "r":
+                            up(turtle);
+                            break;
+                        case "f":
+                            down(turtle);
+                            break;
+                    }
+                } catch (e) {
+                    console.warn(`Failed to input movement: ${e}`);
+                }
             }
         }
     })();
 }
 
-export async function scanAll(turtle: Turtle) {
-    let scanResult = await sendCommand<(BlockInfo | false)[]>(turtle, `
-    function look(fun)
-        s, r = fun()
-        if not s then return s end
-        return {
-            id = r.name,
-            state = r.state
-        }
-    end
-    
-    return {
-        look(turtle.inspectDown),
-        look(turtle.inspect),
-        look(turtle.inspectUp)
-    }
-    `);
-
-    scanResult = scanResult.map(info => info && !info.id.includes("turtle") ? info : false);
-
-    blocks.setBlock(offsetPosition(turtle.position, "down"), scanResult[0] || null)
-    blocks.setBlock(offsetPosition(turtle.position, turtle.facing), scanResult[1] || null)
-    blocks.setBlock(offsetPosition(turtle.position, "up"), scanResult[2] || null)
-    blocks.setBlock(turtle.position, null);
+export async function scanAll(turtle: Turtle): Promise<boolean> {
+    return await expectResponse("s", turtle.label);
 }
 
-export async function requestInventory(turtle: Turtle): Promise<[Tuple<ItemStack, 16>, number]> {
-    return await sendCommand<[Tuple<ItemStack, 16>, number]>(turtle, `
-    r = {}
-    for i=1,16 do
-        d = turtle.getItemDetail(i)
-        if not d then
-            r[i] = textutils.json_null
-        else
-            r[i] = {
-                id = d.name,
-                count = d.count
-            }
-        end
-    end
-    return {r, turtle.getSelectedSlot()}
-    `);
-}
-
-export async function refreshInventory(turtle: Turtle) {
-    try {
-        const [ result, selectedSlot ] = await requestInventory(turtle);
-
-        turtles.updateTurtle(turtle.label, t => {
-            t.inventory = result
-            t.selectedSlot = selectedSlot - 1;
-        });
-    } catch (e) {
-        console.warn("Failed to refresh inventory: " + e);
-    }
+export async function refreshInventory(turtle: Turtle): Promise<boolean> {
+    return await expectResponse("i", turtle.label);
 }
 
 export async function selectSlot(turtle: Turtle, slot: number): Promise<boolean> {
-    try {
-        const result = await sendCommand<boolean>(turtle, `return turtle.select(${slot + 1})`);
-
-        if (result) {
-            turtles.updateTurtle(turtle.label, t => t.selectedSlot = slot);
-        }
-
-        return result;
-    } catch (e) {
-        console.warn("Failed to select slot: " + e);
-        return false;
-    }
+    return await expectResponse("o", {
+        turtle: turtle.label,
+        slot,
+    });
 }
 
 export async function transferTo(turtle: Turtle, destinationSlot: number, maxCount?: number): Promise<boolean> {
-    try {
-        let result: boolean;
-
-        if (maxCount) {
-            result = await sendCommand<boolean>(turtle, `return turtle.transferTo(${destinationSlot + 1}, ${maxCount})`);
-        } else {
-            result = await sendCommand<boolean>(turtle, `return turtle.transferTo(${destinationSlot + 1})`);
-        }
-
-        if (result) {
-            await selectSlot(turtle, destinationSlot);
-            await refreshInventory(turtle);
-        }
-        return result;
-    } catch (e) {
-        console.warn("Failed to transfer item: " + e);
-        return false;
-    }
+    return await expectResponse("f", {
+        turtle: turtle.label,
+        destinationSlot,
+        maxCount: maxCount || null,
+    });
 }
 
-function createUpForwardDownFunction(commandBuilder: (keyWord: "Up" | "" | "Down") => string): (turtle: Turtle, direction: InteractionDirection) => Promise<boolean> {
+function createUpForwardDownFunction(command: string): (turtle: Turtle, direction: InteractionDirection) => Promise<boolean> {
     return async (turtle: Turtle, direction: InteractionDirection) => {
-        try {
-            const keyWord = direction == "up" ? "Up" : direction == "forward" ? "" : "Down";
-            const result = await sendCommand<boolean>(turtle, commandBuilder(keyWord));
-
-            if (result) {
-                await refreshInventory(turtle);
-            }
-
-            return result;
-        } catch (e) {
-            console.warn("Failed to run interaction: " + e);
-            return false;
-        }
-    }
+        return await expectResponse("n", {
+            turtle: turtle.label,
+            command,
+            direction,
+        });
+    };
 }
 
-export const suck = createUpForwardDownFunction(keyWord => `return turtle.suck${keyWord}()`);
-export const drop = createUpForwardDownFunction(keyWord => `return turtle.drop${keyWord}()`);
-export const dig = createUpForwardDownFunction(keyWord => `return turtle.dig${keyWord}()`);
-export const place = createUpForwardDownFunction(keyWord => `return turtle.place${keyWord}()`);
+export const suck = createUpForwardDownFunction("suck");
+export const drop = createUpForwardDownFunction("drop");
+export const dig = createUpForwardDownFunction("dig");
+export const place = createUpForwardDownFunction("place");
+
+export async function refuel(turtle: Turtle): Promise<boolean> {
+    return await expectResponse("u", turtle.label);
+}

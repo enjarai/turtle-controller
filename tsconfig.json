@@ -13,8 +13,15 @@
      */
     "allowJs": true,
     "checkJs": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "paths": {
+      "@shared/*": ["./common/*"]
+    }
   },
-  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],
+  "include": [
+    "api/src/**/*.ts", "api/src/**/*.js",
+    "web/src/**/*.ts", "web/src/**/*.js", "web/src/**/*.svelte",
+    "common/**/*.ts", "common/**/*.js"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

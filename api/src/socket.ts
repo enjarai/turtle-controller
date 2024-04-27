@@ -41,7 +41,7 @@ wss.on('connection', (ws: WebSocket) => {
         const value = query.slice(2, query.length);
 
         if (type === "c") {
-            let turtle = getTurtle(label);
+            let turtle = getTurtle(value);
             if (turtle && getConnection(turtle)) {
                 console.log(`Turtle ${value} reconnected`)
             } else {
@@ -59,6 +59,7 @@ wss.on('connection', (ws: WebSocket) => {
                         null, null, null, null,
                     ],
                     selectedSlot: 0,
+                    fuelLevel: 0,
                 }
             }
             createConnection(turtle, ws);
