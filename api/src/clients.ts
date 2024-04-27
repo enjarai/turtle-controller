@@ -6,12 +6,13 @@ import {
     refreshInventory, refuel,
     scanAll,
     selectSlot,
-    sendCommand,
+    sendCommand, syncTurtles,
     transferTo,
     turtles
 } from "./turtles";
 import {blocks, getBlock} from "./blocks";
 import type {InteractionDirection, Vec3} from "@shared/types";
+import type {Order} from "@shared/orders";
 
 export const connectedClients: WebSocket[] = [];
 
@@ -122,6 +123,17 @@ wss.on('connection', (ws: WebSocket) => {
                 const turtle = getTurtle(label);
                 if (turtle) {
                     return await refuel(turtle);
+                } else {
+                    return false;
+                }
+            });
+        } else if (type === "O") {
+            await respondSynced(ws, value, async (payload: {turtle: string, order: Order}) => {
+                const turtle = getTurtle(payload.turtle);
+                if (turtle) {
+                    turtle.orders.push(payload.order);
+                    await syncTurtles(turtle);
+                    return true;
                 } else {
                     return false;
                 }

@@ -9,6 +9,8 @@
   import Terminal from "./components/Terminal.svelte";
   import TurtleInventory from "./components/TurtleInventory.svelte";
   import type {Turtle} from '@shared/types';
+  import TurtleWindow from "./components/TurtleWindow.svelte";
+  import Orders from "./components/Orders.svelte";
 
   let mouse = {x: 0, y: 0};
 
@@ -35,14 +37,20 @@
     </div>
   </div>
   <div class="viewport">
-    <Canvas>
-      <Scene />
-    </Canvas>
+    <div class="top-bar">
+      <Orders/>
+      tt
+    </div>
+    <div class="canvas">
+      <Canvas>
+        <Scene />
+      </Canvas>
+    </div>
   </div>
   <div class="overlay">
     {#each selected as turtle (turtle.label)}
       <div class="turtle-inventory">
-        <TurtleInventory turtle={turtle}/>
+        <TurtleWindow {turtle}/>
       </div>
     {/each}
   </div>
@@ -77,7 +85,7 @@
   }
 
   .overlay {
-    height: 100%;
+    margin-top: 60px;
     width: 80%;
     position: fixed;
     left: 20%;
@@ -104,6 +112,16 @@
     flex-direction: column;
   }
 
+  .top-bar {
+    width: 100%;
+    height: 60px;
+    background: #1f3636;
+  }
+
+  .canvas {
+    flex-grow: 1;
+  }
+
   .turtle-list {
     background: darkslategray;
     overflow: auto;
@@ -116,6 +134,8 @@
 
   .viewport {
     width: 80%;
+    display: flex;
+    flex-direction: column;
   }
 
   .tooltip {

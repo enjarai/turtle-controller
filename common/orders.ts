@@ -1,6 +1,6 @@
 import type {Vec3} from "@shared/types";
 
-export type Order = MoveToOrder | MineBlockOrder | MineAreaOrder | AutoMineOrder | MitosisOrder;
+export type Order = MoveToOrder | MineBlockOrder | MineAreaOrder | AutoMineOrder | MitosisOrder | DanceOrder;
 
 export type MoveToOrder = {
     id: "moveTo",
@@ -24,5 +24,10 @@ export type AutoMineOrder = {
 
 export type MitosisOrder = {
     id: "mitosis",
+    stage: number,
+}
+
+export type DanceOrder = {
+    id: "dance",
     stage: number,
 }
