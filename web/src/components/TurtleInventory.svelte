@@ -45,7 +45,7 @@
                        selectedSlot={turtle.selectedSlot}
                        on:selectstack={selectStack}
                        on:movestack={moveStack}/>
-            <table>
+            <table class="turtle-data">
                 <tr>
                     <td>Fuel</td>
                     <td>{turtle.fuelLevel}</td>
@@ -81,5 +81,11 @@
 <style>
     .body {
         display: flex;
+    }
+
+    .turtle-data {
+        margin-top: 12px;
+        min-width: 200px;
+        background-color: #1c1c1c;
     }
 </style>

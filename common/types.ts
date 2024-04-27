@@ -1,4 +1,5 @@
 import type { Writable } from "svelte/store";
+import type {Order} from "@shared/orders";
 
 export type Turtle = {
     label: string,
@@ -9,6 +10,7 @@ export type Turtle = {
     selectedSlot: number,
     connected?: boolean,
     fuelLevel: number,
+    orders: Order[],
 };
 
 export type WorldBlock = BlockInfo & {

@@ -60,6 +60,7 @@ wss.on('connection', (ws: WebSocket) => {
                     ],
                     selectedSlot: 0,
                     fuelLevel: 0,
+                    orders: [],
                 }
             }
             createConnection(turtle, ws);
