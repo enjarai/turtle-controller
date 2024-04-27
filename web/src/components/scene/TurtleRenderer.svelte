@@ -1,7 +1,7 @@
 <script lang="ts">
   import { T } from "@threlte/core";
-  import { toRotation } from "$lib/direction.js";
-  import type { Turtle } from "../../types";
+  import { toRotation } from "@shared/direction";
+  import type { Turtle } from "@shared/types";
   import { select, selectedTurtles } from "../../selection";
   import NormalTurtle from "./models/NormalTurtle.svelte";
   import { tooltip } from "../../misc";
@@ -12,7 +12,7 @@
       select(turtle, e.ctrlKey);
   }
 
-  $: selected = $selectedTurtles.includes(turtle);
+  $: selected = $selectedTurtles.includes(turtle.label);
   $: modelPos = [turtle.position[0], turtle.position[1] - 0.5, turtle.position[2]]
 </script>
 

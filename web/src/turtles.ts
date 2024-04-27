@@ -1,37 +1,12 @@
-import type { BlockInfo, InteractionDirection, ItemStack, Tuple, Turtle, WorldBlock } from "./types";
+import type { BlockInfo, InteractionDirection, ItemStack, Tuple, Turtle, WorldBlock } from "@shared/types";
 import { writable } from "svelte/store";
-import { offsetPosition, opposite, rotateLeft, rotateRight } from "$lib/direction";
+import { offsetPosition, opposite, rotateLeft, rotateRight } from "@shared/direction";
 import { focusedTurtle, selectedTurtles } from "./selection";
 import { blocks } from "./blocks";
-import { dataDirectory } from "./misc";
-// noinspection ES6ConvertRequireIntoImport
-const fs = require("fs");
-
-const turtlesDataPath = `${dataDirectory}/turtles.json`;
-
-function loadTurtles(): Turtle[] {
-    try {
-        return JSON.parse(fs.readFileSync(turtlesDataPath).toString("utf-8"));
-    } catch (e) {
-        return [];
-    }
-}
-
-export function saveTurtles(turtles: Turtle[]) {
-    fs.writeFileSync(turtlesDataPath, JSON.stringify(turtles, (key, value) => {
-        switch (key) {
-            case "connection":
-            case "lock":
-                return undefined;
-            default:
-                return value;
-        }
-    }, 2));
-    console.log("Saved Turts");
-}
+import {expectResponse, wsc} from "./socket";
 
 export let turtles = {
-    ...writable<Turtle[]>(loadTurtles()),
+    ...writable<Turtle[]>([]),
 
     updateTurtle(label: string, updater: (turtle: Turtle) => void) {
         this.update(turtles => {
@@ -61,31 +36,11 @@ turtles.subscribe(t => {
     focusedTurtle.update(t2 => t2);
 });
 
-export async function sendCommand<T>(turtle: Turtle, command: string): Promise<T> {
-    return new Promise((resolve, reject) => {
-        if (!turtle.connection) {
-            reject("Turtle not connected");
-            return;
-        } else if (turtle.lock) {
-            reject("Turtle is busy");
-            return;
-        }
-
-        turtle.lock = true;
-
-        turtle.connection.send("e:" + command);
-        turtle.connection.once("message", data => {
-            const response = data.toString("utf-8");
-            const type = response.slice(0, 1);
-            const value = response.slice(2, response.length);
-            if (type === "s") {
-                resolve(JSON.parse(value));
-            } else {
-                reject(value);
-            }
-            turtle.lock = false;
-        });
-    });
+export async function sendCommand<T>(turtle: Turtle, command: string): Promise<T | null> {
+    return await expectResponse("e", JSON.stringify({
+        turtle: turtle.label,
+        command,
+    }));
 }
 
 function createMoveCommand(command: string, updater: (turtle: Turtle) => void): (turtle: Turtle) => Promise<boolean> {

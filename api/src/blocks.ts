@@ -1,6 +1,8 @@
 import type { BlockInfo, Vec3, WorldBlock } from "@shared/types";
 import { dataDirectory } from "./misc";
 import * as fs from 'node:fs/promises';
+import {posEquals} from "@shared/misc";
+import {sendToAll} from "./clients";
 
 const blocksDataPath = `${dataDirectory}/blocks.json`;
 
@@ -15,10 +17,6 @@ async function loadBlocks(): Promise<WorldBlock[]> {
 export async function saveBlocks() {
     await fs.writeFile(blocksDataPath, JSON.stringify(blocks, (key, value) => value, 2));
     console.log("Saved Blocks");
-}
-
-export function posEquals(pos1: Vec3, pos2: Vec3): boolean {
-    return pos1.every((n: number, i: number) => pos2[i] === n);
 }
 
 export function getBlock(pos: Vec3) {
@@ -39,7 +37,11 @@ export function setBlock(pos: Vec3, block: BlockInfo | null): Vec3 {
 }
 
 export async function syncBlocks(...posses: Vec3[]) {
-    // TODO all if empty
+    if (posses.length > 0) {
+        sendToAll("b:" + JSON.stringify(posses.map((s) => getBlock(s))));
+    } else {
+        sendToAll("B:" + JSON.stringify(blocks));
+    }
 }
 
 export let blocks = await loadBlocks();

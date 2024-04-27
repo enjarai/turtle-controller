@@ -1,9 +1,9 @@
 <script lang="ts">
   import { T } from "@threlte/core";
-  import type { WorldBlock } from "../../types";
+  import type { WorldBlock } from "@shared/types";
   import { Color } from "three";
-  import { hashCode, tooltip } from "../../misc";
-  import NormalTurtle from "./models/NormalTurtle.svelte";
+  import { tooltip } from "../../misc";
+  import {hashCode} from "@shared/misc";
 
   export let block: WorldBlock;
 

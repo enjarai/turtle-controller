@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { InteractionDirection, Turtle } from "../types";
+    import type { InteractionDirection, Turtle } from "@shared/types";
   import Inventory from "./Inventory.svelte";
     import { dig, drop, place, selectSlot, suck, transferTo } from "../turtles";
     import ButtonGroup from "./ButtonGroup.svelte";

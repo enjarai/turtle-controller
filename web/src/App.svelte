@@ -1,47 +1,125 @@
 <script lang="ts">
-  import svelteLogo from './assets/svelte.svg'
-  import viteLogo from '/vite.svg'
-  import Counter from './lib/Counter.svelte'
+  import { back, forward, keyPress, turnLeft, turnRight, turtles } from "turtles";
+  import TurtleEntry from "components/TurtleEntry.svelte";
+  import { Canvas } from "@threlte/core";
+  import Scene from "components/scene/Scene.svelte";
+  import { selectedTurtles } from "selection";
+  import { openOverlay, tooltip } from "misc";
+  import LocationOverlay from "components/LocationOverlay.svelte";
+  import Terminal from "components/Terminal.svelte";
+  import TurtleInventory from "components/TurtleInventory.svelte";
+
+  let mouse = {x: 0, y: 0};
+
+  function moveMouse(e: MouseEvent) {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  }
 </script>
 
-<main>
-  <div>
-    <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
-      <img src={viteLogo} class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
+<!--<svelte:document on:contextmenu|preventDefault|stopPropagation={({ x, y }) => menu.popup(x, y)} />-->
+<svelte:document on:keypress={keyPress} on:mousemove={moveMouse} />
+
+<div class="main">
+  <div class="sidebar-left">
+    <div class="turtle-list" on:click={() => $selectedTurtles = []}>
+      {#each $turtles as turtle (turtle.label)}
+        <TurtleEntry {turtle} />
+      {/each}
+    </div>
+    <div class="terminal">
+      <Terminal/>
+    </div>
   </div>
-  <h1>Vite + Svelte</h1>
-
-  <div class="card">
-    <Counter />
+  <div class="viewport">
+    <Canvas>
+      <Scene />
+    </Canvas>
   </div>
-
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme" target="_blank" rel="noreferrer">SvelteKit</a>, the official Svelte app framework powered by Vite!
-  </p>
-
-  <p class="read-the-docs">
-    Click on the Vite and Svelte logos to learn more
-  </p>
-</main>
+  <div class="overlay">
+    {#each $selectedTurtles as turtle (turtle.label)}
+      <div class="turtle-inventory">
+        <TurtleInventory bind:turtle={turtle}/>
+      </div>
+    {/each}
+  </div>
+  {#if $openOverlay}
+    <div class="menu-overlay">
+      {#if $openOverlay === "location"}
+        <LocationOverlay/>
+      {/if}
+    </div>
+  {/if}
+  {#if $tooltip}
+    <div class="tooltip" style="left: {mouse.x + 10}px; top: {mouse.y + 10}px">
+      {$tooltip}
+    </div>
+  {/if}
+</div>
 
 <style>
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
+  .main {
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
   }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
+
+  .menu-overlay {
+    height: 100%;
+    width: 100%;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background-color: rgba(23, 23, 23, 0.2);
   }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
+
+  .overlay {
+    height: 100%;
+    width: 80%;
+    position: fixed;
+    left: 20%;
+    top: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: start;
   }
-  .read-the-docs {
-    color: #888;
+
+  .overlay * {
+    pointer-events: all;
+  }
+
+  .turtle-inventory {
+    margin: 12px;
+    padding: 12px;
+    background: darkslategray;
+  }
+
+  .sidebar-left {
+    width: 20%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .turtle-list {
+    background: darkslategray;
+    overflow: auto;
+    flex-grow: 1;
+  }
+
+  .terminal {
+    height: 40%;
+  }
+
+  .viewport {
+    width: 80%;
+  }
+
+  .tooltip {
+    background-color: rgba(23, 23, 23, 0.6);
+    padding: 10px;
+    font-size: large;
+    position: absolute;
+    pointer-events: none;
   }
 </style>

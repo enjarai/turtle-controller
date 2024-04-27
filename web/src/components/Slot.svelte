@@ -1,8 +1,9 @@
 <script lang="ts">
-  import type { InventoryContext, ItemStack } from "../types";
-  import { hashCode, openOverlay, tooltip } from "../misc";
+  import type { InventoryContext, ItemStack } from "@shared/types";
+  import { openOverlay, tooltip } from "../misc";
   import { Color } from "three";
   import { getContext } from "svelte";
+  import {hashCode} from "@shared/misc";
 
   export let id: number;
   export let stack: ItemStack;
@@ -23,31 +24,33 @@
       }
   }
 
-  const menu = new nw.Menu();
+  // const menu = new nw.Menu();
+  //
+  // const menuItems = [
+  //     {
+  //         label: "Move 1", async click() {
+  //             tryMove(id, 1);
+  //             $selected = id;
+  //             $moving = false;
+  //         }
+  //     },
+  //     {
+  //         label: "Move Half", click() {
+  //             const sourceStack = getStack($selected);
+  //             if (sourceStack) {
+  //                 tryMove(id, Math.min(sourceStack.count / 2));
+  //                 $selected = id;
+  //                 $moving = false;
+  //             }
+  //         }
+  //     }
+  // ];
+  //
+  // menuItems.forEach(function(item) {
+  //     menu.append(new nw.MenuItem(item));
+  // });
 
-  const menuItems = [
-      {
-          label: "Move 1", async click() {
-              tryMove(id, 1);
-              $selected = id;
-              $moving = false;
-          }
-      },
-      {
-          label: "Move Half", click() {
-              const sourceStack = getStack($selected);
-              if (sourceStack) {
-                  tryMove(id, Math.min(sourceStack.count / 2));
-                  $selected = id;
-                  $moving = false;
-              }
-          }
-      }
-  ];
-
-  menuItems.forEach(function(item) {
-      menu.append(new nw.MenuItem(item));
-  });
+  // on:contextmenu|preventDefault|stopPropagation={({ x, y }) => $selected !== id && menu.popup(x, y)}
 
   $: hue = Math.abs(hashCode(stack?.id || "") % 1000);
   $: color = stack && new Color().setHSL(hue / 1000, 0.8, 0.5).getHexString();
@@ -58,8 +61,7 @@
     style:background-color={highlighted ? $moving ? "#5b9b59" : "#9b8659" : "#202020"}
     on:mousemove={() => stack && ($tooltip = stack.id)}
     on:mouseleave={() => $tooltip = null}
-    on:click={onClick}
-    on:contextmenu|preventDefault|stopPropagation={({ x, y }) => $selected !== id && menu.popup(x, y)}>
+    on:click={onClick}>
   {#if stack}
     <div class="item"
          style:background-color={`#${color}`}>

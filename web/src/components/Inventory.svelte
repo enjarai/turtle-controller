@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { InventoryContext, ItemStack } from "../types";
+  import type { InventoryContext, ItemStack } from "@shared/types";
   import Slot from "./Slot.svelte";
   import { createEventDispatcher, setContext } from "svelte";
   import { writable } from "svelte/store";

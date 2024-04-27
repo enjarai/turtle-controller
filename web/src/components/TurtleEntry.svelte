@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Turtle } from "../types";
+    import type { Turtle } from "@shared/types";
     import { select, selectedTurtles, focusedTurtle } from "../selection";
     import { openOverlay } from "../misc";
     import { refreshInventory, scanAll } from "../turtles";

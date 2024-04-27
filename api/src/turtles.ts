@@ -4,6 +4,7 @@ import {dataDirectory} from "./misc";
 import * as fs from 'node:fs/promises';
 import {getConnection} from "./connections";
 import {setBlock, syncBlocks} from "./blocks";
+import {sendToAll} from "./clients";
 
 const turtlesDataPath = `${dataDirectory}/turtles.json`;
 
@@ -28,8 +29,12 @@ export async function saveTurtles() {
     console.log("Saved Turtles");
 }
 
-export async function syncTurtles(...turtles: Turtle[]) {
-    // TODO all if empty
+export async function syncTurtles(...syncTurtles: Turtle[]) {
+    if (syncTurtles.length > 0) {
+        sendToAll("t:" + JSON.stringify(syncTurtles));
+    } else {
+        sendToAll("T:" + JSON.stringify(turtles));
+    }
 }
 
 export function getTurtle(label: string | null): Turtle | undefined {
@@ -84,6 +89,12 @@ function createMoveCommand(command: string, updater: (turtle: Turtle) => void): 
         return success;
     };
 }
+
+// export const actions = {
+//     forward, back, up, down, turnLeft, turnRight,
+//     scanAll, refreshInventory, selectSlot, transferTo,
+//     suck, drop, dig, place,
+// };
 
 export const forward = createMoveCommand("return turtle.forward()", t => t.position = offsetPosition(t.position, t.facing));
 export const back = createMoveCommand("return turtle.back()", t => t.position = offsetPosition(t.position, opposite(t.facing)));

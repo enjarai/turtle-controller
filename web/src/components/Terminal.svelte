@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { ResponseData } from "../types";
+    import type { ResponseData } from "@shared/types";
     import { selectedTurtles } from "../selection";
     import { sendCommand } from "../turtles";
 
