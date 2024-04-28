@@ -1,4 +1,4 @@
-import type { Direction, Facing, Vec3 } from "./types";
+import type {Direction, Facing, MoveAction, Vec3} from "./types";
 
 export function toRotation(facing: Facing): number {
     return toRotationId(facing) * -(Math.PI / 2);
@@ -83,6 +83,17 @@ export function opposite(direction: Direction): Direction {
         case "west": return "east";
         case "up": return "down";
         case "down": return "up";
+    }
+}
+
+export function oppositeAction(action: MoveAction): MoveAction {
+    switch (action) {
+        case "up": return "down";
+        case "down": return "up";
+        case "forward": return "back";
+        case "back": return "forward";
+        case "turnLeft": return "turnRight";
+        case "turnRight": return "turnLeft";
     }
 }
 

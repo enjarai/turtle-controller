@@ -45,6 +45,7 @@ export type Facing = "north" | "east" | "south" | "west";
 export type Direction = Facing | "up" | "down";
 export type InteractionDirection = "up" | "forward" | "down";
 export type Vec3 = [number, number, number];
+export type MoveAction = "up" | "down" | "forward" | "back" | "turnLeft" | "turnRight";
 
 export type OverlayType = "location";
 

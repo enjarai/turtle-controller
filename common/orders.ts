@@ -1,4 +1,4 @@
-import type {Vec3} from "@shared/types";
+import type {Direction, MoveAction, Vec3} from "@shared/types";
 
 export type Order = MoveToOrder | MineBlockOrder | MineAreaOrder | AutoMineOrder | MitosisOrder | DanceOrder;
 
@@ -21,6 +21,9 @@ export type MineAreaOrder = {
 
 export type AutoMineOrder = {
     id: "autoMine",
+    backtrack: MoveAction[],
+    cycle: number,
+    next?: MoveAction,
 }
 
 export type MitosisOrder = {

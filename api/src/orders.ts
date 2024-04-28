@@ -1,7 +1,7 @@
 import type {AutoMineOrder, DanceOrder, MitosisOrder, MoveToOrder, Order} from "@shared/orders";
-import type {Turtle} from "@shared/types";
-import {back, down, forward, moveActions, turnLeft, turnRight, turtles, up} from "./turtles";
-import {getDirectionOfVector, isHorizontal, offsetPosition, rotateLeft} from "@shared/direction";
+import type {Direction, Turtle} from "@shared/types";
+import {back, dig, down, forward, moveActions, turnLeft, turnRight, turtles, up} from "./turtles";
+import {getDirectionOfVector, isHorizontal, offsetPosition, oppositeAction, rotateLeft} from "@shared/direction";
 import {getBlock} from "./blocks";
 
 export async function tick() {
@@ -65,8 +65,59 @@ async function moveTo(order: MoveToOrder, turtle: Turtle) {
     }
 }
 
-async function autoMine(order: AutoMineOrder, turtle: Turtle) {
+const oreIds = [
+    "minecraft:coal_ore", "minecraft:iron_ore", "minecraft:gold_ore", "minecraft:diamond_ore",
+    "minecraft:lapis_ore", "minecraft:emerald_ore", "minecraft:copper_ore", "minecraft:redstone_ore",
+    "minecraft:deepslate_coal_ore", "minecraft:deepslate_iron_ore", "minecraft:deepslate_gold_ore", "minecraft:deepslate_diamond_ore",
+    "minecraft:deepslate_lapis_ore", "minecraft:deepslate_emerald_ore", "minecraft:deepslate_copper_ore", "minecraft:deepslate_redstone_ore",
+    "minecraft:nether_gold_ore", "minecraft:nether_quartz_ore", "minecraft:ancient_debris",
+]
 
+async function autoMine(order: AutoMineOrder, turtle: Turtle) {
+    if (turtle.fuelLevel < 100) {
+        turtle.orders.splice(0, 1);
+        return;
+    }
+
+    if (order.next) {
+        await moveActions[order.next](turtle);
+        order.backtrack.splice(0, 0, order.next);
+        delete order.next;
+        return;
+    }
+
+    const checkOre = (direction: Direction) => oreIds.includes(getBlock(offsetPosition(turtle.position, direction))?.id);
+
+    if (checkOre("up")) {
+        await dig(turtle, "up");
+        order.next = "up";
+    } else if (checkOre(turtle.facing)) {
+        await dig(turtle, "forward");
+        order.next = "forward";
+    } else if (checkOre("down")) {
+        await dig(turtle, "down");
+        order.next = "down";
+
+    } else {
+        if (order.backtrack.length <= 0) {
+            const actions = [
+                () => dig(turtle, "forward"),
+                forward,
+                turnLeft,
+                turnRight,
+                turnRight,
+                turnLeft,
+            ];
+            await actions[order.cycle](turtle);
+            order.cycle++;
+            if (order.cycle === actions.length) {
+                order.cycle = 0;
+            }
+        } else {
+            await moveActions[oppositeAction(order.backtrack[0])](turtle);
+            order.backtrack.splice(0, 1);
+        }
+    }
 }
 
 async function mitosis(order: MitosisOrder, turtle: Turtle) {
