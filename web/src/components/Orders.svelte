@@ -20,3 +20,10 @@
 })}>
     Dance
 </button>
+<!--<button on:click={() => orderAll({-->
+<!--    id: "moveTo",-->
+<!--    pos: ,-->
+<!--    flyingNow: false,-->
+<!--})}>-->
+<!--    MoveTo-->
+<!--</button>-->

@@ -138,6 +138,17 @@ wss.on('connection', (ws: WebSocket) => {
                     return false;
                 }
             });
+        } else if (type === "S") {
+            await respondSynced(ws, value, async (payload: {turtle: string, index: number}) => {
+                const turtle = getTurtle(payload.turtle);
+                if (turtle) {
+                    turtle.orders.splice(payload.index, 1);
+                    await syncTurtles(turtle);
+                    return true;
+                } else {
+                    return false;
+                }
+            });
         }
     });
 });

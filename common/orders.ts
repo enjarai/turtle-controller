@@ -5,6 +5,7 @@ export type Order = MoveToOrder | MineBlockOrder | MineAreaOrder | AutoMineOrder
 export type MoveToOrder = {
     id: "moveTo",
     pos: Vec3,
+    flyingNow: boolean,
 }
 
 export type MineBlockOrder = {

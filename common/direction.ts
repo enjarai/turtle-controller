@@ -36,6 +36,28 @@ export function getUnitVector(direction: Direction): Vec3 {
     }
 }
 
+export function getDirectionOfVector(vector: Vec3): Direction {
+    if (vector[0] >= Math.max(vector[1], vector[2])) {
+        if (vector[0] >= 0) {
+            return "east";
+        } else {
+            return "west";
+        }
+    } else if (vector[1] >= vector[2]) {
+        if (vector[1] >= 0) {
+            return "up";
+        } else {
+            return "down";
+        }
+    } else {
+        if (vector[2] >= 0) {
+            return "south";
+        } else {
+            return "north";
+        }
+    }
+}
+
 export function offsetPosition(position: Vec3, direction: Direction): Vec3 {
     const vector = getUnitVector(direction);
     return [
@@ -62,4 +84,8 @@ export function opposite(direction: Direction): Direction {
         case "up": return "down";
         case "down": return "up";
     }
+}
+
+export function isHorizontal(direction: Direction): direction is Facing {
+    return direction === "north" || direction === "east" || direction === "south" || direction === "west";
 }
