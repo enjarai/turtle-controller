@@ -53,7 +53,11 @@ export function addTurtle(turtle: Turtle) {
     }
 }
 
-export let turtles = await loadTurtles();
+export let turtles: Turtle[] = [];
+
+(async () => {
+    turtles = await loadTurtles();
+})().then();
 
 export async function sendCommand<T>(turtle: Turtle, command: string): Promise<T> {
     return new Promise((resolve, reject) => {

@@ -3,6 +3,7 @@ import { dataDirectory } from "./misc";
 import * as fs from 'node:fs/promises';
 import {posEquals} from "@shared/misc";
 import {sendToAll} from "./clients";
+import {turtles} from "./turtles";
 
 const blocksDataPath = `${dataDirectory}/blocks.json`;
 
@@ -48,4 +49,8 @@ export async function syncBlocks(...posses: Vec3[]) {
     }
 }
 
-export let blocks = await loadBlocks();
+export let blocks: WorldBlock[] = [];
+
+(async () => {
+    blocks = await loadBlocks();
+})().then();
