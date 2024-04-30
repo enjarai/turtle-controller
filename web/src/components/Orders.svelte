@@ -27,3 +27,10 @@
 <!--})}>-->
 <!--    MoveTo-->
 <!--</button>-->
+<button on:click={() => orderAll({
+    id: "autoMine",
+    cycle: 0,
+    backtrack: [],
+})}>
+    AutoMine
+</button>

@@ -11,14 +11,20 @@ wss.on('connection', (ws: WebSocket) => {
 
     // Handle keep-alive ping and timeout
     const interval = setInterval(() => {
-        ws.send("p:" + "k-a");
-        const timeout = setTimeout(() => {
-            console.log(`turtle ${label} timed out on keep-alive ping`);
-            ws.close();
-        }, 5000);
-        ws.once('message', data => {
-            clearTimeout(timeout);
-        })
+        const turtle = getTurtle(label);
+        if (turtle && !turtle.lock) {
+            turtle.lock = true;
+            ws.send("p:" + "k-a");
+            const timeout = setTimeout(() => {
+                console.log(`turtle ${label} timed out on keep-alive ping`);
+                ws.close();
+                turtle.lock = undefined;
+            }, 5000);
+            ws.once('message', data => {
+                clearTimeout(timeout);
+                turtle.lock = undefined;
+            });
+        }
     }, 5000);
     ws.on('close', async () => {
         clearInterval(interval);
