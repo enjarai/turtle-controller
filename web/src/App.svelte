@@ -39,7 +39,6 @@
   <div class="viewport">
     <div class="top-bar">
       <Orders/>
-      tt
     </div>
     <div class="canvas">
       <Canvas>

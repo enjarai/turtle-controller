@@ -1,6 +1,6 @@
 import type {Direction, MoveAction, Vec3} from "@shared/types";
 
-export type Order = MoveToOrder | MineBlockOrder | MineAreaOrder | AutoMineOrder | MitosisOrder | DanceOrder;
+export type Order = MoveToOrder | MineBlockOrder | MineAreaOrder | AutoMineOrder | MitosisOrder | DanceOrder | MoveLineOrder;
 
 export type MoveToOrder = {
     id: "moveTo",
@@ -34,4 +34,9 @@ export type MitosisOrder = {
 export type DanceOrder = {
     id: "dance",
     stage: number,
+}
+
+export type MoveLineOrder = {
+    id: "moveLine",
+    direction: MoveAction,
 }

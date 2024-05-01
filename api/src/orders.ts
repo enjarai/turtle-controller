@@ -1,4 +1,4 @@
-import type {AutoMineOrder, DanceOrder, MitosisOrder, MoveToOrder, Order} from "@shared/orders";
+import type {AutoMineOrder, DanceOrder, MitosisOrder, MoveLineOrder, MoveToOrder, Order} from "@shared/orders";
 import type {Direction, Turtle} from "@shared/types";
 import {back, dig, down, forward, moveActions, turnLeft, turnRight, turtles, up} from "./turtles";
 import {getDirectionOfVector, isHorizontal, offsetPosition, oppositeAction, rotateLeft} from "@shared/direction";
@@ -26,6 +26,8 @@ async function tickOrder(order: Order, turtle: Turtle) {
         await mitosis(order, turtle);
     } else if (order.id === "dance") {
         await dance(order, turtle);
+    } else if (order.id === "moveLine") {
+        await moveLine(order, turtle);
     }
 }
 
@@ -140,5 +142,11 @@ async function dance(order: DanceOrder, turtle: Turtle) {
     order.stage++;
     if (order.stage === actions.length) {
         order.stage = 0;
+    }
+}
+
+async function moveLine(order: MoveLineOrder, turtle: Turtle) {
+    if (!await moveActions[order.direction](turtle)) {
+        turtle.orders.splice(0, 1);
     }
 }

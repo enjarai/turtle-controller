@@ -34,3 +34,27 @@
 })}>
     AutoMine
 </button>
+<button on:click={() => orderAll({
+    id: "moveLine",
+    direction: "forward",
+})}>
+    Move Line: Forward
+</button>
+<button on:click={() => orderAll({
+    id: "moveLine",
+    direction: "back",
+})}>
+    Move Line: Back
+</button>
+<button on:click={() => orderAll({
+    id: "moveLine",
+    direction: "up",
+})}>
+    Move Line: Up
+</button>
+<button on:click={() => orderAll({
+    id: "moveLine",
+    direction: "down",
+})}>
+    Move Line: Down
+</button>

@@ -3,7 +3,7 @@ import {turtles} from "./turtles";
 import type {Turtle, WorldBlock} from "@shared/types";
 import {blocks} from "./blocks";
 
-export const wsc = new WebSocket("ws://localhost:4040");
+export const wsc = new WebSocket(config.apiUrl); // "ws://localhost:4040"
 export let loggedIn = writable(false);
 
 wsc.onmessage = async (event) => {
